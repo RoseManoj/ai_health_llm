@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Health Diagnostics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #667eea;
+        }
+
+        .message.ai .message-avatar {
+            background: #764ba2;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai .message-content {
+            background: #f0f0f0;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .health-response {
+            background: white;
+            padding: 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .health-section {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .health-section:last-child {
+            border-bottom: none;
+        }
+
+        .health-title {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .health-content {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .health-content ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .health-content li {
+            margin: 5px 0;
+        }
+
+        .disclaimer {
+            font-size: 12px;
+            color: #d32f2f;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            background: white;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        #symptomInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            max-height: 100px;
+            transition: border-color 0.2s;
+        }
+
+        #symptomInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #c62828;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 AI Health Diagnostics</h1>
+            <p>Describe your symptoms and get AI-powered health insights</p>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="empty-state">
+                <div class="empty-state-icon">🏥</div>
+                <h2>Welcome to AI Health Diagnostics</h2>
+                <p>Describe your symptoms in the box below</p>
+                <p style="color: #999; font-size: 12px; margin-top: 10px;">Always consult a medical professional for diagnosis</p>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea
+                    id="symptomInput"
+                    placeholder="Describe your symptoms... (e.g., 'I have a high fever, cough, and sore throat')"
+                    rows="2"
+                ></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const symptomInput = document.getElementById('symptomInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        const API_URL = 'http://localhost:8000';
+
+        // Allow sending with Ctrl+Enter
+        symptomInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = isUser ? '👤' : '🤖';
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+
+            if (isUser) {
+                content.textContent = text;
+            } else {
+                content.innerHTML = text;
+            }
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addLoadingMessage() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai';
+            messageDiv.id = 'loadingMessage';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = '🤖';
+
+            const content = document.createElement('div');
+            content.className = 'message-content loading';
+            content.innerHTML = '<div class="spinner"></div><span>Analyzing symptoms...</span>';
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function removeLoadingMessage() {
+            const loadingMsg = document.getElementById('loadingMessage');
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+        }
+
+        function clearEmptyState() {
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+        }
+
+        async function sendMessage() {
+            const symptoms = symptomInput.value.trim();
+
+            if (!symptoms) {
+                alert('Please enter your symptoms');
+                return;
+            }
+
+            // Clear input
+            symptomInput.value = '';
+            sendBtn.disabled = true;
+
+            // Clear empty state on first message
+            clearEmptyState();
+
+            // Add user message
+            addMessage(symptoms, true);
+
+            // Add loading state
+            addLoadingMessage();
+
+            try {
+                const response = await fetch(`${API_URL}/ai-diagnosis`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        symptoms: symptoms
+                    })
+                });
+
+                removeLoadingMessage();
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                let aiResponse = data.ai_response || 'Unable to get response';
+
+                // Check if response contains the health format markers
+                if (aiResponse.includes('PREDICTED DISEASE')) {
+                    // Format the structured response
+                    let formattedResponse = formatHealthResponse(aiResponse);
+                    addMessage(formattedResponse, false);
+                } else {
+                    // Simple text response for non-symptom inputs
+                    addMessage(aiResponse, false);
+                }
+
+            } catch (error) {
+                removeLoadingMessage();
+                console.error('Error:', error);
+                
+                let errorMsg = '⚠️ Unable to connect to the AI service. ';
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg += 'Make sure the backend server is running on http://localhost:8000';
+                } else {
+                    errorMsg += error.message;
+                }
+
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message ai';
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = '❌';
+                const content = document.createElement('div');
+                content.className = 'message-content error';
+                content.textContent = errorMsg;
+                errorDiv.appendChild(avatar);
+                errorDiv.appendChild(content);
+                chatContainer.appendChild(errorDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            sendBtn.disabled = false;
+            symptomInput.focus();
+        }
+
+        // Focus input on load
+        symptomInput.focus();
+
+        function formatHealthResponse(text) {
+            const sections = {
+                'PREDICTED DISEASE': '',
+                'PRECAUTIONS': '',
+                'MEDICATION': '',
+                'WORKOUT': '',
+                'DIET': ''
+            };
+
+            // Parse the response
+            const lines = text.split('\n');
+            let currentSection = null;
+            let sectionLines = [];
+
+            for (const line of lines) {
+                let matched = false;
+                for (const section of Object.keys(sections)) {
+                    if (line.includes(section)) {
+                        if (currentSection && sectionLines.length > 0) {
+                            sections[currentSection] = sectionLines.join('\n').trim();
+                        }
+                        currentSection = section;
+                        sectionLines = [];
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched && currentSection && line.trim()) {
+                    sectionLines.push(line.trim());
+                }
+            }
+
+            if (currentSection && sectionLines.length > 0) {
+                sections[currentSection] = sectionLines.join('\n').trim();
+            }
+
+            // Build HTML
+            let html = '<div class="health-response">';
+
+            if (sections['PREDICTED DISEASE']) {
+                html += `<div class="health-section">
+                    <div class="health-title">🏥 PREDICTED DISEASE</div>
+                    <div class="health-content">${sections['PREDICTED DISEASE']}</div>
+                </div>`;
+            }
+
+            if (sections['PRECAUTIONS']) {
+                const items = parseListItems(sections['PRECAUTIONS']);
+                html += `<div class="health-section">
+                    <div class="health-title">⚠️ PRECAUTIONS</div>
+                    <div class="health-content"><ul>`;
+                items.forEach(item => {
+                    html += `<li>${item}</li>`;
+                });
+                html += `</ul></div></div>`;
+            }
+
+            if (sections['MEDICATION']) {
+                const items = parseListItems(sections['MEDICATION']);
+                html += `<div class="health-section">
+                    <div class="health-title">💊 MEDICATION</div>
+                    <div class="health-content"><ul>`;
+                items.forEach(item => {
+                    html += `<li>${item}</li>`;
+                });
+                html += `</ul></div></div>`;
+            }
+
+            if (sections['WORKOUT']) {
+                const items = parseListItems(sections['WORKOUT']);
+                html += `<div class="health-section">
+                    <div class="health-title">💪 WORKOUT</div>
+                    <div class="health-content"><ul>`;
+                items.forEach(item => {
+                    html += `<li>${item}</li>`;
+                });
+                html += `</ul></div></div>`;
+            }
+
+            if (sections['DIET']) {
+                const items = parseListItems(sections['DIET']);
+                html += `<div class="health-section">
+                    <div class="health-title">🥗 DIET</div>
+                    <div class="health-content"><ul>`;
+                items.forEach(item => {
+                    html += `<li>${item}</li>`;
+                });
+                html += `</ul></div></div>`;
+            }
+
+            html += `<div class="health-section">
+                <div class="disclaimer">⚠️ This is not a medical diagnosis. Always consult a doctor.</div>
+            </div></div>`;
+
+            return html;
+        }
+
+        function parseListItems(text) {
+            // Remove all leading/trailing whitespace
+            text = text.trim();
+            
+            // Split by dashes that are at the start of lines
+            let items = text.split(/\n\s*-\s*/).filter(x => x.trim());
+            
+            // If no dashes found, try splitting by newlines
+            if (items.length <= 1) {
+                items = text.split('\n').filter(x => x.trim());
+            }
+            
+            // Clean up each item
+            return items.map(item => {
+                return item
+                    .trim()
+                    .replace(/^[-\.\*\•]+\s*/, '')  // Remove leading punctuation
+                    .replace(/^\d+[\.\)]\s*/, '')   // Remove numbering
+                    .trim();
+            }).filter(x => x && x.length > 3);  // Filter very short items
+        }
+    </script>
+</body>
+</html>
